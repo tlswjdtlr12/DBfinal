@@ -14,9 +14,9 @@ public class Main {
         //String url ="jdbc:mysql://127.0.0.1:3306/company";
     	String url ="jdbc:mariadb://127.0.0.1:3306/company";
         String user="tlswjdtlr1";
-        String password ="showme12";
-           
-        //Driver load.  
+        String password ="showme12";  
+             
+        //Driver load.    
         try{
         Class.forName("org.mariadb.jdbc.Driver");          
         }catch(ClassNotFoundException e){
