@@ -16,7 +16,7 @@ public class Main {
         String user="tlswjdtlr1";
         String password ="showme12";
         
-        //Driver load.
+        //Driver load.  
         try{
         Class.forName("org.mariadb.jdbc.Driver");          
         }catch(ClassNotFoundException e){
