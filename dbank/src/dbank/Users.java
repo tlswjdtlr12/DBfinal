@@ -21,35 +21,47 @@ public class Users {
 	String phone;
 	String birth; // yyyy-mm-dd 형식
 	String bnumber; // branch number (예시 주어주고 고르라고 해야함)
+	String query;
 	Boolean check_perfect; // 전원 나갔을 때를 대비 
 
-	public String check_account(String acuid) { // 중복 확인
+	public String check_same(String temp, int num) { // 중복 확인
 		try {
+			Calendar cal1 = Calendar.getInstance();
 			same_account = false;
 			while(rset.next()) {
-				if(Objects.equals(rset.getString("UID"), acuid)) {
-					System.out.println("같은 번호의 계정입니다. 다시 수행합니다.");
-					same_account = true;
-					acuid = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
-					break;
+				if(num==1) {
+					if(Objects.equals(rset.getString("UID"), temp)) {
+						System.out.println("같은 번호의 계정입니다. 다시 수행합니다.");
+						same_account = true;
+						temp = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
+						break;
+					}
+				}
+				else if(num==2) {
+					if(Objects.equals(rset.getString("Dnum"), temp) && num==2) {
+						System.out.println("같은 번호의 문서입니다. 다시 수행합니다.");
+						same_account = true;
+						temp = (cal1.get(Calendar.YEAR)-2000)+"-"+(rand.nextInt(899)+100)+"-"+(rand.nextInt(89999)+10000);
+						break;
+					}
 				}
 			}
-			if(same_account) return acuid;
-			System.out.println("계정 번호 확정");
-			return acuid;
+			if(same_account) return temp;
+			System.out.println("확정");
+			return temp;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		return acuid;
+		return temp;
 	}
-	
+
 	public void run() {
-		
+
 
 		Calendar cal = Calendar.getInstance();
 		start_day = cal.get(Calendar.YEAR)+"-"+cal.get(Calendar.MONTH)+"-"+cal.get(Calendar.DATE);				
 
-		
+
 		try {
 			while (true) {
 				System.out.println("어서오십시오. 작업을 선택해 주십시오.");
@@ -65,23 +77,18 @@ public class Users {
 
 				switch (choice){
 				case "1":
-					check_perfect = false;
 					System.out.println("* 계정 생성 *");
-
-
 					System.out.println(">> Type your password");
 					password = Main.sc.nextLine();
-
 
 					// 완료. 계정 번호 생성
 					rset = Main.stmt.executeQuery("select * from user");
 					acuid = "123-4742-957";
+					// acuid = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
 					do{
-						acuid = check_account(acuid);
+						acuid = check_same(acuid,1);
 					} while(same_account);
 
-					
-					System.out.println("계정 : " + acuid);
 
 					System.out.println(">> Type your name");
 					name = Main.sc.nextLine();
@@ -92,12 +99,35 @@ public class Users {
 					System.out.println(">> Type your Birth Date (YYYY-MM-DD)");
 					birth = Main.sc.nextLine();
 					System.out.println(">> Select area you want to deposit");
+					System.out.println("1. 서울");
+					System.out.println("2. 대전");
+					System.out.println("3. 대구");
+					System.out.println("4. 부산");
+					System.out.println("5. 제주");
 					bnumber = Main.sc.nextLine();
-					// 기본입력 끝
+
 					
+					// 이게 원본. 아래꺼는 테스트용
+					//query = String.format("insert into user values " + "('%s','%s','%s','%s','%s','%s','%s')",
+					//		phone, name, password, address,birth,bnumber,acuid);
+					query = "insert into user values ('01019602111','test','showshow12!','address test 123','1966-11-11','1','123-1111-111')";
+					Main.stmt.executeUpdate(query); // user insert 완료
 
-
-					check_perfect = true;
+					
+					String dnum = (cal.get(Calendar.YEAR)-2000)+"-"+(rand.nextInt(899)+100)+"-"+(rand.nextInt(89999)+10000);
+					do{
+						dnum = check_same(dnum,2);
+					} while(same_account);
+					String dmgr = "18000" + bnumber;
+					
+					
+					// 이게 원본, 아래꺼는 테스트용
+					//query = String.format("insert into document values ('%d-%d-%d','%s','%s','%s','%s','%s','%s','%s',1,null)",
+					//		cal.get(Calendar.YEAR),cal.get(Calendar.MONTH),cal.get(Calendar.DATE),
+					//		name, address, phone, birth, bnumber, dnum, dmgr);
+					query = "insert into document values ('2018-11-12','test','address test 123','01019602111','1966-11-11','1','18-123-12312','180001',1,null)";
+					Main.stmt.executeUpdate(query);
+					
 					break;
 				case "2":
 					System.out.println("* 계정 삭제 *");
@@ -107,17 +137,56 @@ public class Users {
 					// 확인
 					// 삭제
 					// 도큐먼트 수정
+					System.out.println("=====계좌 삭제=====");
+					System.out.println("계좌 번호 : ");
+					cmd=Main.sc.nextLine();
+
+					rset = Main.stmt.executeQuery(
+							"select * from user where UID='" + cmd + "'");
+
+					if(rset.next())
+					{
+						System.out.println("계좌 정보");
+						System.out.printf("%s\t %s\n",
+								rset.getString("name"), rset.getString("UID"));
+						System.out.print("비밀번호 : ");
+						String pwd;
+						pwd=Main.sc.nextLine();
+
+						if(pwd.equals(rset.getString("password")))
+						{
+							System.out.println("비밀번호 일치.. 삭제중... :)(");
+							if(Main.stmt.executeUpdate("delete from account where @@!#!@='" + cmd + "'")!=0)
+							{
+								System.out.println("삭제 성공 !!");
+							}
+							else
+							{
+								System.out.println("삭제에 실패했습니다");
+							}
+						}
+						else
+						{
+							System.out.println("비밀번호가 틀렸습니다");
+						}
+					}
+					else
+					{
+						System.out.println("해당 계좌번호에 맞는 계좌가 없습니다");
+						continue;
+					}
+
 
 					break;
 				case "3":
 					System.out.println("* 계좌 생성 *");
-					
+
 
 					int year = cal.get(Calendar.YEAR) - 2000; // 18 얘는 계좌번호
-					
-					
-					
-					
+
+
+
+
 					break;
 				case "4":
 					System.out.println("* 계좌 삭제 *");
