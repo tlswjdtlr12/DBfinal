@@ -169,6 +169,7 @@ public class Users {
 									if(Main.stmt.executeUpdate("update document set Storage='0',destruction='"+ today +"' where DUID='123-1111-111'")!=0) {
 										System.out.println("개인정보는 1년 후 파기됩니다.");
 									}
+									//test
 									else System.out.println("문서 수정 실패");
 								}
 								else
