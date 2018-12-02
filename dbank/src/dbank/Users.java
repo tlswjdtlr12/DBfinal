@@ -13,6 +13,7 @@ public class Users {
 
 	Random rand = new Random();
 	ResultSet rset;
+	ResultSet docu_rset;
 	boolean same_account;
 	String acuid; // 계정 번호
 	String cmd;
@@ -41,16 +42,20 @@ public class Users {
 					}
 				}
 				else if(num==2) {
-					if(Objects.equals(rset.getString("Dnum"), temp) && num==2) {
+					if(Objects.equals(rset.getString("Dnum"), temp)) {
 						System.out.println("같은 번호의 문서입니다. 다시 수행합니다.");
 						same_account = true;
 						temp = (cal1.get(Calendar.YEAR)-2000)+"-"+(rand.nextInt(899)+100)+"-"+(rand.nextInt(89999)+10000);
 						break;
 					}
 				}
+				else if(num==3) { // 바꿀 필요 있을경우
+					same_account = true;
+					temp = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
+					break;
+				}
 			}
 			if(same_account) return temp;
-			System.out.println("확정");
 			return temp;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -69,7 +74,7 @@ public class Users {
 
 		try {
 			while (true) {
-				System.out.println("어서오십시오. 작업을 선택해 주십시오.");
+				System.out.println("\n\n\n어서오십시오. 작업을 선택해 주십시오.");
 				System.out.println("1. 계정 생성");
 				System.out.println("2. 계정 삭제");
 				System.out.println("3. 계좌 생성");
@@ -92,7 +97,13 @@ public class Users {
 					// acuid = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
 					do{
 						acuid = check_same(acuid,1);
+						if(Main.stmt.execute("select * from document where DUID='"+acuid+"'") && !same_account){
+							System.out.println("같은 번호의 문서가 존재합니다.");
+							check_same(acuid,3);
+						}
+						else if(!same_account)System.out.println("같은 번호의 문서 없슴");
 					} while(same_account);
+					System.out.println("확정");
 
 
 					System.out.print(">> Type your name : ");
@@ -122,12 +133,13 @@ public class Users {
 					} while(same_account);
 					String dmgr = "18000" + bnumber;
 					
-					
 					// 이게 원본, 아래꺼는 테스트용
-					//query = String.format("insert into document values ('%s','%s','%s','%s','%s','%s','%s','%s',1,null)",
+					//query = String.format("insert into document values ('%s','%s','%s','%s','%s','%s','%s','%s',1,null,'%s')",
 					//		today,
-					//		name, address, phone, birth, bnumber, dnum, dmgr);
-					query = "insert into document values ('2018-11-12','testtesttest','address test 123','01019602111','1966-11-11',1,'18-123-12312','180001',true,null,'123-1111-111')";
+					//		name, address, phone, birth, bnumber, dnum, dmgr, acuid);
+					
+					// 생성 후 삭제 후 생성할때 지금은 에러떠도됨. 예시로 하느라 쿼리 때려박았으니
+					query = "insert into document values ('2018-11-12','test','address test 123','01019602111','1966-11-11',1,'18-123-12312','180001',true,null,'123-1111-111')";
 					Main.stmt.executeUpdate(query);
 					break;
 					
