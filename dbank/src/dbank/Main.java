@@ -83,6 +83,18 @@ nAccount="110-499-"+(rand.nextInt(500000)+100000);
 					}
 					catch(Exception e) {}
 
+update account set ACUID='123-1438-472' where Uname = 'ava';
+update account set ACUID='123-4742-957' where Uname = 'agnes';
+update account set ACUID='123-4748-573' where Uname = 'audrey';
+update account set ACUID='123-4919-421' where Uname = 'adela';
+update account set ACUID='123-4921-421' where Uname = 'amanda';
+update account set ACUID='123-5738-850' where Uname = 'amy';
+update account set ACUID='123-5831-112' where Uname = 'ann';
+update account set ACUID='123-5875-691' where Uname = 'angela';
+update account set ACUID='123-8427-121' where Uname = 'amber';
+update account set ACUID='123-9583-381' where Uname = 'agatha';
+
+
 
 		 */
 	}
