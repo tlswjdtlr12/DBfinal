@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class Main {
 	public static Scanner sc;
 	public static Statement stmt;
-	public static void main(String[] args){
+	public static void main(String[] args) throws Exception{
 		// project에 builds 지정 필수
 		//String url ="jdbc:mysql://127.0.0.1:3306/company";
 		String url ="jdbc:mariadb://127.0.0.1:3306/company";
