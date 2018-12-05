@@ -12,12 +12,13 @@ import java.util.Random;
 public class Users {
 
 	Random rand = new Random();
-	ResultSet rset;
+	ResultSet rset, rset_ac; // ac = account
 	boolean same_account,choice_end;
 	String acuid, password; // 계정 번호와 비밀번호
 	String cmd, pwd, isDelete ; // command
 	String start_day, Anumber, name, address, phone, birth, bnumber; // Anumber:계좌번호, birth:yyyy-mm-dd형식, bnumber:branch number
 	String query, choice;
+	int money;
 
 	public String check_same(String temp, int num) { // 중복 확인
 		try {
@@ -89,7 +90,7 @@ public class Users {
 					System.out.println("2. 계정 삭제");
 					System.out.println("3. 계좌 생성");
 					System.out.println("4. 계좌 삭제");
-					System.out.println("5. 잔액 조회");
+					System.out.println("5. 계좌 정보");
 					System.out.println("6. 입금");
 					System.out.println("7. 출금");
 					System.out.print("your choice : ");
@@ -100,8 +101,16 @@ public class Users {
 
 					case "1":
 						System.out.println("* 계정 생성 *");
-						System.out.println(">> Type your password");
-						password = Main.sc.nextLine();
+
+						while(true){
+							System.out.println("\n>> Type your password");
+							password = Main.sc.nextLine();
+							String regExp = "^(?=.*[0-9])(?=.*[a-z]).{10,20}$";
+							if(!password.matches(regExp)){ // 일치하지 않을때
+								System.out.println("비밀번호는 문자와 숫자를 포함해 10자 이상 20자 이하입니다.");
+							}
+							else break;
+						}
 
 						// 완료. 계정 번호 생성
 						rset = Main.stmt.executeQuery("select * from user");
@@ -115,7 +124,7 @@ public class Users {
 							}
 							else if(!same_account)System.out.println("같은 번호의 문서 없슴");
 						} while(same_account);
-						System.out.println("확정");
+						// 계정 번호 확정
 
 
 						System.out.print(">> Type your name : ");
@@ -124,8 +133,13 @@ public class Users {
 						address = Main.sc.nextLine();
 						System.out.print(">> Type your phone number (doesn't typing '-') : ");
 						phone = Main.sc.nextLine();
-						System.out.print(">> Type your Birth Date (YYYY-MM-DD) : ");
+						System.out.print(">> Type your RRN(주민등록번호) : ");
 						birth = Main.sc.nextLine();
+						if(Main.stmt.executeQuery("select * from user where birth='"+birth+"'")!=null){
+							System.out.println("기존 계정이 존재합니다. 계정은 하나만 생성 가능합니다.");
+							break;
+						}
+
 						System.out.println(">> Select area you want to deposit");
 						System.out.println("1. 서울\n2. 대전\n3. 대구\n4. 부산\n5. 제주");
 						System.out.print("your choice : ");
@@ -135,7 +149,7 @@ public class Users {
 						// 이게 원본. 아래꺼는 테스트용
 						//query = String.format("insert into user values " + "('%s','%s','%s','%s','%s','%s','%s')",
 						//		phone, name, password, address,birth,bnumber,acuid);
-						query = "insert into user values ('01019602111','test','showshow12!','address test 123','1966-11-11','1','123-1111-111')";
+						query = "insert into user values ('01019602111','test','showshow12!','address test 123','961111-1111111','1','123-1111-111')";
 						Main.stmt.executeUpdate(query); // user insert 완료
 
 						// dnum = document number
@@ -151,7 +165,7 @@ public class Users {
 						//		name, address, phone, birth, bnumber, dnum, dmgr, acuid);
 
 						// 생성 후 삭제 후 생성할때 지금은 에러떠도됨. 예시로 하느라 쿼리 때려박았으니
-						query = "insert into document values ('2018-11-12','test','address test 123','01019602111','1966-11-11',1,'18-123-12312','180001',true,null,'123-1111-111')";
+						query = "insert into document values ('2018-11-12','test','address test 123','01019602111','961111-1111111',1,'18-123-12312','180001',true,null,'123-1111-111')";
 						Main.stmt.executeUpdate(query);
 						break;
 
@@ -189,7 +203,7 @@ public class Users {
 										// document 수정
 										//if(Main.stmt.executeUpdate("update * document set Storage='0',destruction='"+ today +" where UID='" + cmd + "'")!=0) {
 										if(Main.stmt.executeUpdate("update document set Storage='0',destruction='"+ today +"' where DUID='123-1111-111'")!=0) {
-											System.out.println("개인정보는 1년 후 파기됩니다.");
+											System.out.println("개인정보는 10년 후 파기됩니다.");
 										}
 										//test
 										else System.out.println("문서 수정 실패하였습니다. [err21]");
@@ -224,7 +238,7 @@ public class Users {
 						
 						if(rset.next())
 						{
-							System.out.print("비밀번호 : ");
+							System.out.print("계정 비밀번호 : ");
 							pwd=Main.sc.nextLine();
 							if(pwd.equals(rset.getString("Apassword")))
 							{
@@ -263,20 +277,170 @@ public class Users {
 						break;
 					case "4":
 						System.out.println("* 계좌 삭제 *");
+
+						System.out.print("계정 번호 : ");
+						cmd=Main.sc.nextLine();
+						rset = Main.stmt.executeQuery("select * from user where UID='" + cmd + "'");
+
+						System.out.print("계좌 번호 : ");
+						cmd=Main.sc.nextLine();
+						rset_ac = Main.stmt.executeQuery("select * from account where Anumber='" + cmd + "'");
+
+						if(rset.next())
+						{
+							System.out.print("비밀번호 : ");
+							
+							pwd=Main.sc.nextLine();
+							if(pwd.equals(rset.getString("Apassword")))
+							{
+								System.out.println("* 계좌 정보 *");
+								System.out.printf("%s\t %s\t %d\n",
+										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"));
+								System.out.println("삭제하시겠습니까? yes:1 , no:2");
+								isDelete = Main.sc.nextLine();
+								if(isDelete.equals("1"))
+								{
+									if(rset_ac.getInt("asset")>0)
+									{
+										System.out.println("돈을 모두 출금 후 삭제해주십시오.");
+										break;
+									}
+									//if(Main.stmt.executeUpdate("delete from account where Anumber='" + cmd + "'")!=0)
+									if(Main.stmt.executeUpdate("delete from account where UID='18-11111-111'")!=0)
+									{
+										System.out.println("삭제 성공 !!");
+									}
+									else
+									{
+										System.out.println("삭제에 실패하였습니다. [err33]");
+									}
+								}
+								else System.out.println("취소를 선택하셨습니다.");
+							}
+							else
+							{
+								System.out.println("비밀번호를 확인해주십시오.");
+							}
+						}
+						else
+						{
+							System.out.println("일치하는 계좌가 없습니다");
+							continue;
+						}
 						break;
+
 					case "5":
-						System.out.println("* 잔액 조회 *");
+						System.out.println("* 계좌 정보 *");
+						boolean IsExist=false;
+						System.out.print("계정 번호 : ");
+						cmd=Main.sc.nextLine();
+						rset_ac = Main.stmt.executeQuery("select * from account where ACUID='" + cmd + "'");
+
+						System.out.print("비밀번호 : ");
+						pwd=Main.sc.nextLine();
+							
+						while(rset_ac.next())
+						{
+							IsExist = true;
+							if(pwd.equals(rset_ac.getString("password")))
+							{
+								System.out.println("* 계좌 및 잔액 정보 *");
+								System.out.printf("%s\t %s\t %d\t %d\t %s\n",
+										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"),
+										rset_ac.getInt("ABnum"), rset_ac.getString("ACUID"));
+							}
+							else
+							{
+								System.out.println("비밀번호를 확인해주십시오.");
+							}
+						}
+						if(!IsExist)
+						{
+							System.out.println("일치하는 계좌가 없습니다");
+						}
+
 						break;
 					case "6":
 						System.out.println("* 입금 *");
+						System.out.print("계좌 번호 : ");
+						cmd=Main.sc.nextLine();
+						rset_ac = Main.stmt.executeQuery("select * from account where Anumber='" + cmd + "'");
+
+						if(rset_ac.next())
+						{
+							System.out.print("비밀번호 : ");
+							
+							pwd=Main.sc.nextLine();
+							if(pwd.equals(rset_ac.getString("password")))
+							{
+								System.out.println("얼마를 입금 하시겠습니까?");
+								money = Integer.parseInt(Main.sc.nextLine());
+								if(money > 10000000) {
+									System.out.println("한번에 가능한 입출력 금액은 천만원 이하입니다.");
+									break;
+								}
+								System.out.println("처리중입니다...(실제로 돈 받는다 가정)");
+								Main.stmt.executeUpdate("update account set asset = asset + "+money+" where Anumber='"+cmd+"'");
+
+								System.out.printf("처리 완료 되었습니다.\n%s\t %s\t %d\n",
+										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"));
+							}
+							else
+							{
+								System.out.println("비밀번호를 확인해주십시오.");
+							}
+						}
+						else
+						{
+							System.out.println("일치하는 계좌가 없습니다");
+							continue;
+						}
+
 						break;
+
 					case "7":
 						System.out.println("* 출금 *");
+
+						System.out.print("계좌 번호 : ");
+						cmd=Main.sc.nextLine();
+						rset_ac = Main.stmt.executeQuery("select * from account where Anumber='" + cmd + "'");
+
+						if(rset_ac.next())
+						{
+							System.out.print("비밀번호 : ");
+							
+							pwd=Main.sc.nextLine();
+							if(pwd.equals(rset_ac.getString("password")))
+							{
+								System.out.println("얼마를 출금 하시겠습니까?");
+								money = Integer.parseInt(Main.sc.nextLine());
+								if(money > 10000000) {
+									System.out.println("한번에 가능한 입출력 금액은 천만원 이하입니다.");
+									break;
+								}
+								if(money > rset_ac.getInt("asset")){
+									System.out.println("잔액이 부족합니다. 다시 확인해 주십시오.");
+									break;
+								}
+								System.out.println("처리중입니다...(실제로 돈 준다 가정)");
+								Main.stmt.executeUpdate("update account set asset = asset - "+money+" where Anumber='"+cmd+"'");
+
+								System.out.printf("처리 완료 되었습니다.\n%s\t %s\t %d\n",
+										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"));
+							}
+							else
+							{
+								System.out.println("비밀번호를 확인해주십시오.");
+							}
+						}
+						else
+						{
+							System.out.println("일치하는 계좌가 없습니다");
+							continue;
+						}
+
 						break;
 					}
-
-
-
 
 					break;
 				}
