@@ -1,16 +1,17 @@
 package dbank;
 
-import java.security.Key;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
-
+import java.security.Key;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -18,7 +19,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class Users {
 
 	Random rand = new Random();
-	ResultSet rset, rset_ac; // ac = account
+	ResultSet rset, rset_ac, rset_m; // ac = account, m = manager
 	boolean same_account,choice_end;
 	String acuid, password, enc_pw; // 계정 번호와 비밀번호
 	String cmd, pwd, isDelete ; // command
@@ -52,7 +53,7 @@ public class Users {
 					temp = (cal1.get(Calendar.YEAR) - 2000)+"-"+(rand.nextInt(89999)+10000)+"-"+(rand.nextInt(899)+100);
 					break;
 				}
-				
+
 			}
 			return temp;
 		} catch (SQLException e) {
@@ -60,46 +61,46 @@ public class Users {
 		}
 		return temp;
 	}
-	
+
 	public static Key getAESKey() throws Exception { // AES 128 암호화
-	    String iv;
-	    Key keySpec;
+		String iv;
+		Key keySpec;
 
-	    String key = "2014004739123456"; // key : 제 학번 + 123456 
-	    iv = key.substring(0, 16);
-	    byte[] keyBytes = new byte[16];
-	    byte[] b = key.getBytes("UTF-8");
+		String key = "2014004739123456"; // key : 제 학번 + 123456 
+		iv = key.substring(0, 16);
+		byte[] keyBytes = new byte[16];
+		byte[] b = key.getBytes("UTF-8");
 
-	    int len = b.length;
-	    if (len > keyBytes.length) {
-	       len = keyBytes.length;
-	    }
+		int len = b.length;
+		if (len > keyBytes.length) {
+			len = keyBytes.length;
+		}
 
-	    System.arraycopy(b, 0, keyBytes, 0, len);
-	    keySpec = new SecretKeySpec(keyBytes, "AES");
+		System.arraycopy(b, 0, keyBytes, 0, len);
+		keySpec = new SecretKeySpec(keyBytes, "AES");
 
-	    return keySpec;
+		return keySpec;
 	}
 
 	// AES 128 암호화
 	public static String encAES(String data) throws Exception {
-        Key key = getAESKey();
-        Cipher c = Cipher.getInstance("AES");
-        c.init(Cipher.ENCRYPT_MODE, key);
-        byte[] encVal = c.doFinal(data.getBytes());
-        return Base64.getEncoder().encodeToString(encVal);
-    }
+		Key key = getAESKey();
+		Cipher c = Cipher.getInstance("AES");
+		c.init(Cipher.ENCRYPT_MODE, key);
+		byte[] encVal = c.doFinal(data.getBytes());
+		return Base64.getEncoder().encodeToString(encVal);
+	}
 
 	// AES 128 복호화
 	public static String decAES(String encryptedData) throws Exception {
-        Key key = getAESKey();
-        Cipher c = Cipher.getInstance("AES");
-        c.init(Cipher.DECRYPT_MODE, key);
-        byte[] decordedValue = Base64.getDecoder().decode(encryptedData);
-        byte[] decValue = c.doFinal(decordedValue);
-        return new String(decValue);
-    }
-	
+		Key key = getAESKey();
+		Cipher c = Cipher.getInstance("AES");
+		c.init(Cipher.DECRYPT_MODE, key);
+		byte[] decordedValue = Base64.getDecoder().decode(encryptedData);
+		byte[] decValue = c.doFinal(decordedValue);
+		return new String(decValue);
+	}
+
 	public void run() throws Exception {
 
 		Calendar cal = Calendar.getInstance();
@@ -121,8 +122,126 @@ public class Users {
 					break;
 
 				case "1": // manager
+					// manager_pw = encAES("showshow11!, showshow22!, showshow33!, showshow44!, showshow55!");
+
+					// 계정이랑 비밀번호 확인
+					// 지점 정보확인 (각 지점별로)
+					// 계정 확인
+					// 파기 계정 확인
+					// 파기할 계정의 정보들을 보여주고 삭제하시겠습니까?
+					// ㅇㅇ => document에서 삭제
+
+					System.out.print("계정 번호 : ");
+					cmd=Main.sc.nextLine();
+					rset = Main.stmt.executeQuery("select * from manager where MID='" + cmd + "'");
+					if(rset.next())
+					{
+						System.out.print("비밀번호 : ");
+
+						pwd=Main.sc.nextLine();
+						enc_pw = encAES(pwd);
+						if(enc_pw.equals(rset.getString("mpassword")))
+						{
+							System.out.printf("\n어서오십시오. %s님\n", rset.getString("Mname"));
+							boolean m_end=false;
+							while(m_end==false) {
+								System.out.println("\n0. 이전 메뉴로 되돌아가기");
+								System.out.println("1. 지점 정보 확인");
+								System.out.println("2. 계정 확인");
+								System.out.println("3. 파기 계정 확인");
+								System.out.print("your choice : ");
+								choice = Main.sc.nextLine();
+								switch (choice){
+								case "0":
+									m_end=true;
+									break;
+
+								case "1":
+									System.out.println("\n* 지점 정보 확인 *");
+									rset_m = Main.stmt.executeQuery("select * from branch where Bmgr="+rset.getString("Mid"));
+									if(rset_m.next()) {
+										System.out.printf("%d\t %s\t %s\t %s\t %d\t %s\n",
+												rset_m.getInt("Basset"),rset_m.getString("Bname"),rset_m.getString("Btelnum"),rset_m.getString("Barea"),rset_m.getInt("Bnum"),rset_m.getString("Bmgr"));
+									}
+									else System.out.println("error[63]");
+									break;
+
+								case "2":
+									System.out.println("\n* 계정 확인 *");
+									rset_m = Main.stmt.executeQuery("select * from account where ABnum='"+rset.getString("Mid").substring(5,6)+"'"); // 마지막 한글자 추출
+									boolean check_acc=false;
+									while(rset_m.next()) {
+										check_acc=true;
+										System.out.printf("%s\t %d\t %s\t %s\t %s\n",
+												rset_m.getString("Uname"),rset_m.getInt("asset"),rset_m.getString("Anumber"),rset_m.getInt("ABnum"),rset_m.getString("ACUID"));
+									}
+									if(check_acc=false) System.out.println("지점에 계정이 존재하지 않습니다.");
+
+									break;
+
+								case "3":
+									System.out.println("\n* 파기 계정 확인 *");
+									// document에서 10년을 뽑아내야함
+									SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+									rset_m = Main.stmt.executeQuery("select * from document where Dbranch='"+rset.getString("Mid")+"'");
+									List<Object> oPerlishArray = new ArrayList<Object>(); // 동적할당
+									while(rset_m.next()) {
+										String start = rset_m.getString("destruction");
+										String end = today;
+
+										Date beginDate = formatter.parse(start);
+										Date endDate = formatter.parse(end);
+
+										// 하루 단위
+										long diff = endDate.getTime() - beginDate.getTime();
+										long diffDays = diff / (24 * 60 * 60 * 1000);
+
+										//System.out.println("날짜차이=" + diffDays);
+										if(diffDays > 3650) { // 10년
+											oPerlishArray.add(rset_m.getString("Dnum"));
+											System.out.printf("%d\t %s\t %s\t %s\t %d\t %s\n",
+													rset_m.getString("Basset"),rset_m.getString("Bname"),rset_m.getString("Btelnum"),rset_m.getString("Barea"),rset_m.getString("Bmgr"));
+										}
+									}
+									if(oPerlishArray.size() > 0) {
+										System.out.println("계정들을 삭제하시겠습니까? yes:1 , no:2");
+										isDelete = Main.sc.nextLine();
+										if(isDelete.equals("1"))
+										{
+											for(int i=0;i<oPerlishArray.size();i++) {
+												// document 삭제
+												if(Main.stmt.executeUpdate("delete from document where Dnum='"+oPerlishArray.get(i)+"'")!=0) {
+													System.out.printf(oPerlishArray.get(i)+" 문서가 DB에서 삭제 되었습니다.");
+												}
+											}
+										}
+										else System.out.println("취소를 선택하셨습니다.");
+
+									}
+									else System.out.println("파기할 문서가 존재하지 않습니다.");
+									break;
+								}
+							}
+						}
+						else
+						{
+							System.out.println("비밀번호를 확인해주십시오.");
+							break;
+						}
+					}
+					else
+					{
+						System.out.println("일치하는 계정이 없습니다");
+						break;
+					}
+
+
+
+
+
 
 					break;
+
 
 
 
@@ -142,7 +261,7 @@ public class Users {
 						break;
 
 					case "1":
-						System.out.println("* 계정 생성 *");
+						System.out.println("\n* 계정 생성 *");
 
 						while(true){
 							System.out.println("\n>> Type your password");
@@ -191,7 +310,7 @@ public class Users {
 
 						// aes128 encdoing
 						enc_pw = encAES(password);
-						
+
 						// 이게 원본. 아래꺼는 테스트용
 						//query = String.format("insert into user values " + "('%s','%s','%s','%s','%s','%s','%s')",
 						//		phone, name, enc_pw, address,birth,bnumber,acuid);
@@ -217,7 +336,7 @@ public class Users {
 						break;
 
 					case "2":
-						System.out.println("* 계정 삭제 *");
+						System.out.println("\n* 계정 삭제 *");
 
 						// 계정 번호 입력
 						// 비밀번호 입력
@@ -232,7 +351,7 @@ public class Users {
 						if(rset.next())
 						{
 							System.out.print("비밀번호 : ");
-							
+
 							pwd=Main.sc.nextLine();
 							enc_pw = encAES(pwd);
 							if(enc_pw.equals(rset.getString("Apassword")))
@@ -256,8 +375,8 @@ public class Users {
 									{
 										System.out.println("삭제 성공 !!");
 
-										
-										
+
+
 									}
 									else
 									{
@@ -279,14 +398,14 @@ public class Users {
 						break;
 
 					case "3":
-						System.out.println("* 계좌 생성 *");
+						System.out.println("\n* 계좌 생성 *");
 						// 18-41201-482 이런식
 						System.out.print("계정 번호 : ");
 						acuid=Main.sc.nextLine();
 						rset = Main.stmt.executeQuery("select * from user where UID='" + acuid + "'");
-						
-						
-						
+
+
+
 						if(rset.next())
 						{
 							System.out.print("비밀번호 : ");
@@ -298,7 +417,7 @@ public class Users {
 								do{
 									Anumber = check_same(Anumber,3);
 								} while(same_account);
-								
+
 								// 원본 query = " insert into account select name, Apassword, 0, Anumber, UBnum, 0, 0, acuid from user where user.UID=acuid;"
 								query = "insert into account select name, Apassword, 0, '18-11111-111', UBnum, 0, 0, '123-1111-111' from user where user.UID='123-1111-111';";
 								Main.stmt.executeUpdate(query); // user insert 완료
@@ -314,8 +433,8 @@ public class Users {
 							System.out.println("일치하는 계좌가 없습니다");
 							continue;
 						}
-						
-						
+
+
 						// update user u, account a set a.Uname=u.name, a.password=u.Apassword,
 						// a.ABnum=u.UBnum, a.asset=어쩌고, a.Anumber=저쩌고, a.deposit=어쩌고, a.withdraw=저쩌고 where user.UID = account.ACUID;
 						// insert into account values (u.name, u.Apassword, 0, Anumber, u.UBnum, 0, 0, acuid) from user as u;
@@ -328,7 +447,7 @@ public class Users {
 
 						break;
 					case "4":
-						System.out.println("* 계좌 삭제 *");
+						System.out.println("\n* 계좌 삭제 *");
 
 						System.out.print("계좌 번호 : ");
 						cmd=Main.sc.nextLine();
@@ -337,7 +456,7 @@ public class Users {
 						if(rset_ac.next())
 						{
 							System.out.print("비밀번호 : ");
-							
+
 							pwd=Main.sc.nextLine();
 							enc_pw = encAES(pwd);
 							if(enc_pw.equals(rset_ac.getString("password")))
@@ -379,7 +498,7 @@ public class Users {
 						break;
 
 					case "5":
-						System.out.println("* 계좌 정보 *");
+						System.out.println("\n* 계좌 정보 *");
 						boolean IsExist=false;
 						System.out.print("계정 번호 : ");
 						cmd=Main.sc.nextLine();
@@ -388,7 +507,7 @@ public class Users {
 						System.out.print("비밀번호 : ");
 						pwd=Main.sc.nextLine();
 						enc_pw=encAES(pwd);
-							
+
 						while(rset_ac.next())
 						{
 							IsExist = true;
@@ -411,7 +530,7 @@ public class Users {
 
 						break;
 					case "6":
-						System.out.println("* 입금 *");
+						System.out.println("\n* 입금 *");
 						System.out.print("계좌 번호 : ");
 						cmd=Main.sc.nextLine();
 						rset_ac = Main.stmt.executeQuery("select * from account where Anumber='" + cmd + "'");
@@ -419,7 +538,7 @@ public class Users {
 						if(rset_ac.next())
 						{
 							System.out.print("비밀번호 : ");
-							
+
 							pwd=Main.sc.nextLine();
 							enc_pw=encAES(pwd);
 							if(enc_pw.equals(rset_ac.getString("password")))
@@ -449,7 +568,7 @@ public class Users {
 						break;
 
 					case "7":
-						System.out.println("* 출금 *");
+						System.out.println("\n* 출금 *");
 
 						System.out.print("계좌 번호 : ");
 						cmd=Main.sc.nextLine();
@@ -458,7 +577,7 @@ public class Users {
 						if(rset_ac.next())
 						{
 							System.out.print("비밀번호 : ");
-							
+
 							pwd=Main.sc.nextLine();
 							enc_pw=encAES(pwd);
 							if(enc_pw.equals(rset_ac.getString("password")))
