@@ -10,11 +10,9 @@ public class Main {
 	public static Scanner sc;
 	public static Statement stmt;
 	public static void main(String[] args) throws Exception{
-		// project에 builds 지정 필수
-		//String url ="jdbc:mysql://127.0.0.1:3306/company";
 		String url ="jdbc:mariadb://127.0.0.1:3306/company";
-		String user="tlswjdtlr1";
-		String password ="showme12";  
+		String user="k4i957HLkqEpUaSbHL6uRA==";
+		String password ="PqGX5CVHXA2pCT0YMoHSng==";  
 
 		//Driver load.    
 		try{
@@ -24,16 +22,13 @@ public class Main {
 		}
 
 		//Connection.
-		Connection conn = null;
 		try {
-			conn = DriverManager.getConnection(url,user,password);
-			//--==>> Connection 개체를 반환한다.
-
+			Users users = new Users();
+			Connection conn = DriverManager.getConnection(url,Users.decAES(user),Users.decAES(password));
 			stmt = conn.createStatement();
 			sc = new Scanner(System.in);
-			Users users = new Users();
+			
 			users.run();
-			//SQL
 		} catch (SQLException e) {
 			System.out.println("DB접속 중 오류가 발생하였습니다.");
 			e.printStackTrace();
