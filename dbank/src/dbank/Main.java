@@ -27,7 +27,7 @@ public class Main {
 			Connection conn = DriverManager.getConnection(url,Users.decAES(user),Users.decAES(password));
 			stmt = conn.createStatement();
 			sc = new Scanner(System.in);
-			
+
 			users.run();
 		} catch (SQLException e) {
 			System.out.println("DB접속 중 오류가 발생하였습니다.");

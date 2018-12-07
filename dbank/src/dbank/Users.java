@@ -20,7 +20,7 @@ public class Users {
 	Random rand = new Random();
 	ResultSet rset, rset_ac, rset_m; // ac = account, m = manager
 	boolean same_account,choice_end;
-	String acuid, password, enc_pw; // 계정 번호와 비밀번호
+	String acuid, password, enc_pw, dec_pw; // 계정 번호와 비밀번호
 	String cmd, pwd, isDelete ; // command
 	String start_day, Anumber, name, address, phone, birth, bnumber; // Anumber:계좌번호, birth:yyyy-mm-dd형식, bnumber:branch number
 	String query, choice;
@@ -155,10 +155,10 @@ public class Users {
 									System.out.println("\n* 지점 정보 확인 *");
 									rset_m = Main.stmt.executeQuery("select * from branch where Bmgr="+rset.getString("Mid"));
 									if(rset_m.next()) {
-										System.out.printf("%-10s   %-9s   %-12s   %-6s   %-5s   %-7s\n",
+										System.out.printf("%-10s | %-9s | %-12s | %-6s | %-5s | %-7s\n",
 												"Basset", "Bname", "Btelnum", "Barea", "Bnum", "Bmgr");
 										lines(64);
-										System.out.printf("%-10d   %-9s   %-12s   %-6s   %-5s   %-7s\n",
+										System.out.printf("%-10d | %-9s | %-12s | %-6s | %-5s | %-7s\n",
 												rset_m.getInt("Basset"),rset_m.getString("Bname"),rset_m.getString("Btelnum"),rset_m.getString("Barea"),rset_m.getInt("Bnum"),rset_m.getString("Bmgr"));
 									}
 									else System.out.println("error[63]");
@@ -168,12 +168,12 @@ public class Users {
 									System.out.println("\n* 계정 확인 *");
 									rset_m = Main.stmt.executeQuery("select * from account where ABnum='"+rset.getString("Mid").substring(5,6)+"'"); // 마지막 한글자 추출
 									boolean check_acc=false;
-									System.out.printf("%-10s   %-10s   %-13s   %-6s   %-13s\n",
+									System.out.printf("%-10s | %-10s | %-13s | %-6s | %-13s\n",
 											"Uname", "asset", "Anumber", "ABnum", "ACUID");
 									lines(64);
 									while(rset_m.next()) {
 										check_acc=true;
-										System.out.printf("%-10s   %-10s   %-13s   %-6s   %-13s\n",
+										System.out.printf("%-10s | %-10s | %-13s | %-6s | %-13s\n",
 												rset_m.getString("Uname"),rset_m.getInt("asset"),rset_m.getString("Anumber"),rset_m.getInt("ABnum"),rset_m.getString("ACUID"));
 									}
 									if(check_acc=false) System.out.println("지점에 계정이 존재하지 않습니다.");
@@ -182,11 +182,10 @@ public class Users {
 
 								case "3":
 									System.out.println("\n* 파기 계정 확인 *");
-									// document에서 10년을 뽑아내야함
 									SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 									rset_m = Main.stmt.executeQuery("select * from document where Dbranch='"+rset.getString("Mid")+"'");
 									List<Object> oPerlishArray = new ArrayList<Object>(); // 동적할당
-									System.out.printf("%-10s   %-9s   %-12s   %-6s   %-5s   %-7s\n",
+									System.out.printf("%-10s | %-9s | %-12s | %-6s | %-5s | %-7s\n",
 											"Basset", "Bname", "Btelnum", "Barea", "Bnum", "Bmgr");
 									lines(64);
 									while(rset_m.next()) {
@@ -200,10 +199,9 @@ public class Users {
 										long diff = endDate.getTime() - beginDate.getTime();
 										long diffDays = diff / (24 * 60 * 60 * 1000);
 
-										//System.out.println("날짜차이=" + diffDays);
 										if(diffDays > 3650) { // 10년
 											oPerlishArray.add(rset_m.getString("Dnum"));
-											System.out.printf("%-10s   %-9s   %-12s   %-6s   %-5s   %-7s\n",
+											System.out.printf("%-10s | %-9s | %-12s | %-6s | %-5s | %-7s\n",
 													rset_m.getInt("Basset"),rset_m.getString("Bname"),rset_m.getString("Btelnum"),rset_m.getString("Barea"),rset_m.getInt("Bnum"),rset_m.getString("Bmgr"));
 										}
 									}
@@ -258,6 +256,19 @@ public class Users {
 					case "1":
 						System.out.println("\n* 계정 생성 *");
 
+						rset = Main.stmt.executeQuery("select * from user");
+						acuid = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
+						do{
+							acuid = check_same(acuid,1);
+							rset = Main.stmt.executeQuery("select * from user where UID='"+acuid+"'");
+							if(rset.next() && !same_account){
+								System.out.println("계정 번호 중복. 다시 할당 받습니다.");
+								acuid = check_same(acuid,1);
+							}
+							else if(!same_account)System.out.println("계정 번호 확정");
+						} while(same_account);
+						// 계정 번호 확정
+
 						while(true){
 							System.out.print("Type your password >> ");
 							password = Main.sc.nextLine();
@@ -267,23 +278,6 @@ public class Users {
 							}
 							else break;
 						}
-
-						// 완료. 계정 번호 생성
-						rset = Main.stmt.executeQuery("select * from user");
-						acuid = "123-1111-111";
-						// acuid = "123-"+(rand.nextInt(8999)+1000)+"-"+(rand.nextInt(899)+100);
-						do{
-							// 원본 acuid = check_same(acuid,1);
-							rset = Main.stmt.executeQuery("select * from user where UID='"+acuid+"'");
-							if(rset.next() && !same_account){
-								System.out.println("계정 번호 중복. 다시 할당 받습니다.");
-								acuid = check_same(acuid,1);
-							}
-							else if(!same_account)System.out.println("같은 번호의 계정 없음. 확정");
-						} while(same_account);
-						// 계정 번호 확정
-
-
 						System.out.print("Type your name >> ");
 						name = Main.sc.nextLine();
 						System.out.print("Type your address >> ");
@@ -302,72 +296,49 @@ public class Users {
 						System.out.println("1. 서울\n2. 대전\n3. 대구\n4. 부산\n5. 제주");
 						System.out.print(">> ");
 						bnumber = Main.sc.nextLine();
-
-						// aes128 encdoing
 						enc_pw = encAES(password);
-
-						// 이게 원본. 아래꺼는 테스트용
-						//query = String.format("insert into user values " + "('%s','%s','%s','%s','%s','%s','%s')",
-						//		phone, name, enc_pw, address,birth,bnumber,acuid);
-						String enc_test = encAES("showshow12!");
-						query = "insert into user values ('01019602111','test','"+enc_test+"','address test 123','661111-1111111','1','123-1111-111')";
+						
+						query = String.format("insert into user values " + "('%s','%s','%s','%s','%s','%s','%s')",
+								phone, name, enc_pw, address,birth,bnumber,acuid);
 						Main.stmt.executeUpdate(query); // user insert 완료
 
-						// dnum = document number
+						// document number create
 						String dnum = (cal.get(Calendar.YEAR)-2000)+"-"+(rand.nextInt(899)+100)+"-"+(rand.nextInt(89999)+10000);
 						do{
 							dnum = check_same(dnum,2);
 						} while(same_account);
 						String dmgr = "18000" + bnumber;
-
-						// 이게 원본, 아래꺼는 테스트용
-						//query = String.format("insert into document values ('%s','%s','%s','%s','%s','%s','%s','%s',1,null,'%s')",
-						//		today,
-						//		name, address, phone, birth, bnumber, dnum, dmgr, acuid);
-
-						// 생성 후 삭제 후 생성할때 지금은 에러떠도됨. 예시로 하느라 쿼리 때려박았으니
-						query = "insert into document values ('2018-11-12','test','address test 123','01019602111','661111-1111111',1,'18-123-12312','180001',true,null,'123-1111-111')";
+						query = String.format("insert into document values ('%s','%s','%s','%s','%s','%s','%s','%s',true,null,'%s')",
+								today, name, address, phone, birth, bnumber, dnum, dmgr, acuid);
 						Main.stmt.executeUpdate(query);
+						System.out.printf("환영합니다. 당신의 계정번호는 %s입니다. 계좌를 생성하여 주십시오.\n",acuid);
 						break;
 
 					case "2":
 						System.out.println("\n* 계정 삭제 *");
-
-						// 계정 번호 입력
-						// 비밀번호 입력
-						// 확인
-						// 삭제
-						// 도큐먼트 수정
 						System.out.print("계정 번호 >> ");
 						cmd=Main.sc.nextLine();
-
 						rset = Main.stmt.executeQuery("select * from user where UID='" + cmd + "'");
-
 						if(rset.next())
 						{
 							System.out.print("비밀번호 >> ");
-
 							pwd=Main.sc.nextLine();
 							enc_pw = encAES(pwd);
 							if(enc_pw.equals(rset.getString("Apassword")))
 							{
 								System.out.println("\n* 계좌 정보 *");
-								System.out.printf("%-10s   %-13s\n", "name", "UID");
+								System.out.printf("%-10s | %-13s\n", "name", "UID");
 								lines(26);
-								System.out.printf("%-10s   %-13s\n",	rset.getString("name"), rset.getString("UID"));
+								System.out.printf("%-10s | %-13s\n",	rset.getString("name"), rset.getString("UID"));
 								System.out.println("삭제하시겠습니까? yes:1 , no:2\n>> ");
 								isDelete = Main.sc.nextLine();
 								if(isDelete.equals("1"))
 								{
-									// document 수정
-									//if(Main.stmt.executeUpdate("update * document set Storage='0',destruction='"+ today +" where UID='" + cmd + "'")!=0) {
-									if(Main.stmt.executeUpdate("update document set Storage='0',destruction='"+ today +"' where DUID='123-1111-111'")!=0) {
+									if(Main.stmt.executeUpdate("update document set Storage='0',destruction='"+ today +"' where DUID='" + cmd + "'")!=0) {
 										System.out.println("개인정보는 10년 후 파기됩니다.");
 									}
-									//test
 									else System.out.println("문서 수정 실패하였습니다. [err21]");
-									//if(Main.stmt.executeUpdate("delete from user where UID='" + cmd + "'")!=0)
-									if(Main.stmt.executeUpdate("delete from user where UID='123-1111-111'")!=0)
+									if(Main.stmt.executeUpdate("delete from user where UID='" + cmd + "'")!=0)
 									{
 										System.out.println("삭제 성공 !!");
 									}
@@ -392,13 +363,9 @@ public class Users {
 
 					case "3":
 						System.out.println("\n* 계좌 생성 *");
-						// 18-41201-482 이런식
 						System.out.print("계정 번호 >> ");
 						acuid=Main.sc.nextLine();
 						rset = Main.stmt.executeQuery("select * from user where UID='" + acuid + "'");
-
-
-
 						if(rset.next())
 						{
 							System.out.print("비밀번호 >> ");
@@ -411,10 +378,9 @@ public class Users {
 									Anumber = check_same(Anumber,3);
 								} while(same_account);
 
-								// 원본 query = " insert into account select name, Apassword, 0, Anumber, UBnum, 0, 0, acuid from user where user.UID=acuid;"
-								query = "insert into account select name, Apassword, 0, '18-11111-111', UBnum, 0, 0, '123-1111-111' from user where user.UID='123-1111-111';";
+								query = "insert into account select name, Apassword, 0, '"+Anumber+"', UBnum, 0, 0, '"+acuid+"' from user where user.UID='"+acuid+"';";
 								Main.stmt.executeUpdate(query); // user insert 완료
-								System.out.println("\n계좌가 생성되었습니다.\n당신의 계좌번호는 "+Anumber+" 입니다.");
+								System.out.println("\n계좌가 생성되었습니다.\n당신의 계좌번호는 "+Anumber+" 입니다.\n비밀번호는 계정의 비밀번호와 같습니다.");
 							}
 							else
 							{
@@ -426,36 +392,25 @@ public class Users {
 							System.out.println("일치하는 계좌가 없습니다");
 							continue;
 						}
-
-
-						// update user u, account a set a.Uname=u.name, a.password=u.Apassword,
-						// a.ABnum=u.UBnum, a.asset=어쩌고, a.Anumber=저쩌고, a.deposit=어쩌고, a.withdraw=저쩌고 where user.UID = account.ACUID;
-						// insert into account values (u.name, u.Apassword, 0, Anumber, u.UBnum, 0, 0, acuid) from user as u;
-
-
 						break;
+						
 					case "4":
 						System.out.println("\n* 계좌 삭제 *");
-
 						System.out.print("계좌 번호 >> ");
 						cmd=Main.sc.nextLine();
 						rset_ac = Main.stmt.executeQuery("select * from account where Anumber='" + cmd + "'");
-
 						if(rset_ac.next())
 						{
 							System.out.print("비밀번호 >> ");
-
 							pwd=Main.sc.nextLine();
 							enc_pw = encAES(pwd);
 							if(enc_pw.equals(rset_ac.getString("password")))
 							{
 								System.out.println("\n* 계좌 정보 *");
-								
-								System.out.printf("%-10s   %-13s   %-10s\n", "Uname", "Anumber", "asset");
+								System.out.printf("%-10s | %-13s | %-10s\n", "Uname", "Anumber", "asset");
 								lines(26);
-								System.out.printf("%-10s   %-13s   %-10s\n",
+								System.out.printf("%-10s | %-13s | %-10s\n",
 										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"));
-								
 								System.out.print("삭제하시겠습니까? yes:1 , no:2\n>> ");
 								isDelete = Main.sc.nextLine();
 								if(isDelete.equals("1"))
@@ -465,8 +420,7 @@ public class Users {
 										System.out.println("돈을 모두 출금 후 삭제해주십시오.");
 										break;
 									}
-									//if(Main.stmt.executeUpdate("delete from account where Anumber='" + cmd + "'")!=0)
-									if(Main.stmt.executeUpdate("delete from account where Anumber='18-11111-111'")!=0)
+									if(Main.stmt.executeUpdate("delete from account where Anumber='" + cmd + "'")!=0)
 									{
 										System.out.println("삭제 성공 !!");
 									}
@@ -495,13 +449,11 @@ public class Users {
 						System.out.print("계정 번호 >> ");
 						cmd=Main.sc.nextLine();
 						rset_ac = Main.stmt.executeQuery("select * from account where ACUID='" + cmd + "'");
-
 						System.out.print("비밀번호 >> ");
 						pwd=Main.sc.nextLine();
 						enc_pw=encAES(pwd);
-
 						System.out.println("\n* 계좌 및 잔액 정보 *");
-						System.out.printf("%-10s   %-13s   %-10s   %-12s   %-13s   %-20s\n",
+						System.out.printf("%-10s | %-13s | %-10s | %-6s | %-13s | %-20s\n",
 								"Uname", "Anumber", "asset", "ABnum", "ACUID", "password");
 						lines(93);
 						while(rset_ac.next())
@@ -509,9 +461,9 @@ public class Users {
 							IsExist = true;
 							if(enc_pw.equals(rset_ac.getString("password")))
 							{
-								System.out.printf("%-10s   %-13s   %-10s   %-12s   %-13s   %-20s\n",
+								System.out.printf("%-10s | %-13s | %-10s | %-6s | %-13s | %-20s\n",
 										rset_ac.getString("Uname"), rset_ac.getString("Anumber"), rset_ac.getInt("asset"),
-										rset_ac.getInt("ABnum"), rset_ac.getString("ACUID"), decAES(rset_ac.getString(password)));
+										rset_ac.getInt("ABnum"), rset_ac.getString("ACUID"), decAES(rset_ac.getString("password")));
 							}
 							else
 							{
